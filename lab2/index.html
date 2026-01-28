@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لعبة إكس أو</title>
+
+<style>
+:root {
+  --primary: #4f46e5;
+  --secondary: #22c55e;
+  --bg: #f4f6fb;
+  --card: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: "Tajawal", Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 120px;
+}
+
+.card {
+  background: var(--card);
+  padding: 25px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+
+h1 {
+  color: var(--primary);
+  margin-bottom: 20px;
+}
+
+input, button {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+}
+
+button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: var(--secondary);
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.game {
+  display: none;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.cell {
+  background: #eef2ff;
+  height: 90px;
+  font-size: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.cell:hover {
+  background: #e0e7ff;
+}
+
+.status {
+  font-size: 18px;
+  margin-top: 10px;
+}
+
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #111827;
+  color: #fff;
+  text-align: center;
+  padding: 12px;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- Start Screen -->
+  <div class="card" id="startScreen">
+    <h1>🎮 لعبة إكس أو</h1>
+    <input id="player1" placeholder="اسم اللاعب الأول">
+    <input id="player2" placeholder="اسم اللاعب الثاني (اختياري)">
+    <button onclick="startGame('single')">لاعب واحد</button>
+    <button class="secondary" onclick="startGame('two')">لاعبين</button>
+  </div>
+
+  <!-- Game Screen -->
+  <div class="card game" id="gameScreen">
+    <h1>إكس أو</h1>
+    <div class="status" id="status"></div>
+    <div class="board" id="board"></div>
+    <button onclick="resetGame()">إعادة اللعب</button>
+  </div>
+
+</div>
+
+<footer>
+  <div>Student Name: ABDULLAH ABED ABDULLAH ALMABADI (عبدالله عابد عبدالله المعبدي)</div>
+  <div>Student ID: 446001615</div>
+  <div>Supervised by: Mohammed Ahmed Jabali</div>
+</footer>
+
+<script>
+let board = Array(9).fill("");
+let currentPlayer = "X";
+let mode = "single";
+let names = {};
+let gameActive = true;
+
+const boardEl = document.getElementById("board");
+const statusEl = document.getElementById("status");
+
+function startGame(selectedMode) {
+  mode = selectedMode;
+  names.X = document.getElementById("player1").value || "اللاعب الأول";
+  names.O = selectedMode === "two"
+    ? (document.getElementById("player2").value || "اللاعب الثاني")
+    : "الكمبيوتر";
+
+  document.getElementById("startScreen").style.display = "none";
+  document.getElementById("gameScreen").style.display = "block";
+
+  renderBoard();
+  updateStatus();
+}
+
+function renderBoard() {
+  boardEl.innerHTML = "";
+  board.forEach((cell, i) => {
+    const div = document.createElement("div");
+    div.className = "cell";
+    div.textContent = cell;
+    div.onclick = () => makeMove(i);
+    boardEl.appendChild(div);
+  });
+}
+
+function makeMove(index) {
+  if (!gameActive || board[index]) return;
+
+  board[index] = currentPlayer;
+  renderBoard();
+
+  if (checkWin()) {
+    statusEl.textContent = `🏆 ${names[currentPlayer]} فاز!`;
+    gameActive = false;
+    return;
+  }
+
+  if (board.every(c => c)) {
+    statusEl.textContent = "🤝 تعادل!";
+    gameActive = false;
+    return;
+  }
+
+  currentPlayer = currentPlayer === "X" ? "O" : "X";
+  updateStatus();
+
+  if (mode === "single" && currentPlayer === "O") {
+    setTimeout(computerMove, 500);
+  }
+}
+
+function computerMove() {
+  const empty = board.map((v, i) => v === "" ? i : null).filter(v => v !== null);
+  const move = empty[Math.floor(Math.random() * empty.length)];
+  makeMove(move);
+}
+
+function checkWin() {
+  const wins = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+  return wins.some(w => w.every(i => board[i] === currentPlayer));
+}
+
+function updateStatus() {
+  statusEl.textContent = `الدور على: ${names[currentPlayer]}`;
+}
+
+function resetGame() {
+  board = Array(9).fill("");
+  currentPlayer = "X";
+  gameActive = true;
+  renderBoard();
+  updateStatus();
+}
+</script>
+
+</body>
+</html>
